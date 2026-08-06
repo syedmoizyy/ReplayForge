@@ -2,13 +2,13 @@
 
 ## System shape
 
-ReplayForge begins as a modular monolith plus a worker. The API owns trace ingestion and queries; the worker executes sample workflows and replays. Both share pure domain and replay libraries, PostgreSQL, and a NATS JetStream broker. The minimal web client calls the API and contains no replay logic.
+ReplayForge begins as a modular monolith plus a worker. The API owns trace ingestion and queries; the worker executes sample workflows and replays. Both share pure domain and replay libraries, PostgreSQL, and Redis Streams. The minimal web client calls the API and contains no replay logic.
 
 ```text
 Minimal Web UI -> HTTP API -> PostgreSQL
                          |        ^
                          v        |
-                  NATS JetStream -> Worker
+                    Redis Streams -> Worker
                                       |
                  domain state machine + replay engine
 ```
@@ -62,7 +62,7 @@ packages/
   faults/              one module per fault operator
   divergence/          transition comparison and state diff
   persistence/         PostgreSQL repositories and migrations
-  broker/              JetStream publisher/consumer adapters
+  broker/              Redis Streams publisher/consumer adapters
 tests/
   fixtures/ integration/ e2e/
 ```
@@ -82,7 +82,7 @@ Use JSONB for versioned payloads and snapshots, while identifiers, ordering fiel
 
 ## Queue choice
 
-NATS JetStream carries workflow and replay jobs locally and in the MVP deployment. It provides durable consumers, explicit acknowledgements, redelivery, subject-based isolation, and a lightweight local footprint. Replay runs use subjects and durable names scoped by replay namespace.
+Redis Streams carries workflow and replay jobs locally and in the MVP deployment. Consumer groups provide explicit acknowledgements, pending-entry recovery, and a lightweight local footprint. Replay streams and consumer groups are scoped by replay namespace.
 
 The application assumes at-least-once delivery and enforces idempotency using event/job IDs. Logical trace order comes from persisted sequence numbers, not arrival order. The broker is replaceable through narrow publisher and consumer ports.
 
@@ -139,14 +139,14 @@ States are normalized using versioned rules before comparison. The report contai
 - **Golden fixtures:** versioned traces and expected schedules/reports reviewed as product examples.
 - **Determinism:** repeat identical seed/plan runs and compare normalized artifacts byte-for-byte.
 - **Checkpoint equivalence:** full replay and checkpoint replay must converge when given equivalent inputs.
-- **Integration:** PostgreSQL migrations/repositories, outbox behavior, JetStream redelivery, and crash boundaries.
+- **Integration:** PostgreSQL migrations/repositories, outbox behavior, Redis pending-entry recovery, and crash boundaries.
 - **End-to-end:** the required successful-original then faulted-replay demonstration through API and UI.
 
 Benchmarks will be executable scripts for capture throughput, replay throughput, and report size; documentation will contain placeholders until measurements are run on a stated machine and dataset.
 
 ## Local development workflow
 
-The intended workflow is a container-compose stack for PostgreSQL and NATS, with API, worker, and web processes run in watch mode. A single task runner should provide `setup`, `dev`, `test`, `test:integration`, `test:e2e`, `lint`, `typecheck`, `migrate`, `seed-demo`, and `benchmark`. Exact commands will be chosen with the implementation language in M1 and documented in the root README; none exist yet.
+The initial workflow uses Docker Compose for PostgreSQL and Redis, Java 21, Spring Boot 3, Maven, and Make targets for setup, run, unit tests, integration tests, and local cleanup. Later milestones will add end-to-end, seed-demo, and benchmark tasks when those capabilities exist.
 
 ## Security and isolation
 
@@ -155,12 +155,12 @@ The intended workflow is a container-compose stack for PostgreSQL and NATS, with
 - Imported traces are schema-validated and size-limited; malformed payload injection occurs only after import validation inside an isolated run.
 - Sensitive payload fields require configurable redaction before persistence or export.
 
-## ADR-001: NATS JetStream as the MVP event broker
+## ADR-001: Redis Streams as the MVP event broker
 
-- **Status:** Accepted for MVP planning
+- **Status:** Superseded and accepted for implementation (Redis Streams replaces the earlier NATS planning choice)
 - **Context:** ReplayForge needs at-least-once delivery, observable redelivery, durable consumers, and easy local operation. Broker arrival order cannot be the replay truth.
-- **Decision:** Use NATS JetStream for workflow commands/events and replay jobs, behind publisher/consumer ports. Use PostgreSQL sequence numbers and a transactional outbox for authoritative ordering and reliable publication.
-- **Consequences:** Local setup stays small and failure/redelivery scenarios are easy to demonstrate. The application must implement idempotent consumers and outbox dispatch. Kafka-scale retention and partition tooling are deferred; broker replacement remains possible but not free.
+- **Decision:** Use Redis Streams for workflow commands/events and replay jobs, behind publisher/consumer ports. Use PostgreSQL sequence numbers and a transactional outbox for authoritative ordering and reliable publication.
+- **Consequences:** Local setup stays small and pending-entry recovery scenarios are easy to demonstrate. The application must implement idempotent consumers, explicit acknowledgement/reclaim behavior, and outbox dispatch. Kafka-scale retention and partition tooling are deferred; broker replacement remains possible but not free.
 - **Rejected alternatives:** In-memory queues cannot exercise crash/redelivery behavior. PostgreSQL-only polling obscures broker failure modes. Kafka adds operational weight not justified by the MVP.
 
 ## ADR-002: Pure, single-threaded deterministic replay core
