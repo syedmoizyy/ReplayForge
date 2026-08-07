@@ -23,3 +23,10 @@ management:
       show-details: when_authorized
 replayforge:
   instance-id: ${REPLAYFORGE_INSTANCE_ID:local}
+  workflow-broker:
+    stream: ${WORKFLOW_STREAM:replayforge:workflow}
+    dead-letter-stream: ${WORKFLOW_DLQ_STREAM:replayforge:workflow:dlq}
+    max-attempts: ${WORKFLOW_MAX_ATTEMPTS:4}
+    initial-backoff-ms: ${WORKFLOW_INITIAL_BACKOFF_MS:100}
+    poll-delay-ms: ${WORKFLOW_POLL_DELAY_MS:250}
+    consumers-enabled: ${WORKFLOW_CONSUMERS_ENABLED:true}

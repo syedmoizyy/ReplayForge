@@ -1,4 +1,4 @@
-.PHONY: setup run test integration-test clean-local
+.PHONY: setup run test integration-test seed-local clean-local
 
 setup:
 	docker compose up -d --wait
@@ -11,6 +11,9 @@ test:
 
 integration-test:
 	mvn verify
+
+seed-local:
+	pwsh -File scripts/seed-workflows.ps1
 
 clean-local:
 	mvn clean

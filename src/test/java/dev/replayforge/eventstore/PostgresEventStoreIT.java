@@ -17,7 +17,7 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-@SpringBootTest(properties = "spring.data.redis.repositories.enabled=false")
+@SpringBootTest(properties = {"spring.data.redis.repositories.enabled=false", "replayforge.workflow-broker.consumers-enabled=false"})
 @Testcontainers
 class PostgresEventStoreIT {
     @Container static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:16-alpine");

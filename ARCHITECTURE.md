@@ -24,15 +24,13 @@ Every event has `event_id`, `trace_id`, `correlation_id`, optional `causation_id
 ### Event types
 
 - `ReservationCreated`
-- `PaymentAuthorizationRequested`
-- `PaymentAuthorized` / `PaymentAuthorizationFailed`
+- `DepositAuthorized`
 - `ReservationConfirmed`
-- `ReservationCancellationRequested`
-- `ReservationCancelled`
+- `EventCancelled`
 - `RefundRequested`
-- `RefundIssued` / `RefundFailed`
-- `CreatorPayoutRequested`
-- `CreatorPayoutIssued` / `CreatorPayoutFailed`
+- `RefundCompleted`
+- `PayoutScheduled`
+- `PayoutSent`
 
 The state contains reservation status, authorized and refunded amounts, payout status and amount, processed event IDs, and transition history. Money uses integer minor units plus ISO currency; floats are forbidden.
 

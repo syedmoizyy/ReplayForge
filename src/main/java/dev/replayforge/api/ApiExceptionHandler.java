@@ -7,6 +7,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import dev.replayforge.sampleworkload.WorkflowTransitionException;
 
 @RestControllerAdvice
 public final class ApiExceptionHandler {
@@ -14,5 +15,11 @@ public final class ApiExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     Map<String, Object> validation(MethodArgumentNotValidException error) {
         return Map.of("code", "VALIDATION_FAILED", "message", error.getMessage(), "timestamp", Instant.now().toString());
+    }
+
+    @ExceptionHandler(WorkflowTransitionException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    Map<String, Object> transition(WorkflowTransitionException error) {
+        return Map.of("code", "INVALID_WORKFLOW_TRANSITION", "message", error.getMessage(), "timestamp", Instant.now().toString());
     }
 }

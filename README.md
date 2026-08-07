@@ -20,14 +20,25 @@ mvn test
 mvn verify
 ```
 
+With the application running, seed one normal payout workflow and one cancellation/refund workflow:
+
+```powershell
+pwsh -File scripts/seed-workflows.ps1
+```
+
 When running, liveness and readiness are exposed at:
 
 ```text
 GET http://localhost:8080/actuator/health/liveness
 GET http://localhost:8080/actuator/health/readiness
+POST http://localhost:8080/api/v1/sample-workflows
+POST http://localhost:8080/api/v1/sample-workflows/{reservationId}/cancel
+GET http://localhost:8080/api/v1/sample-workflows/{reservationId}
 ```
 
 Configuration defaults support the Compose services. Copy `.env.example` and export its values only when overrides are needed; Spring does not automatically load `.env` files.
+
+The sample workflow uses Redis consumer groups named `reservation`, `payment`, `refund`, and `payout`. Failed deliveries are retried up to the configured bound and then written to `replayforge:workflow:dlq`. PostgreSQL remains canonical: the event stream, consumer receipts, projection, and transactional outbox survive consumer restarts.
 
 ## Roadmap
 
