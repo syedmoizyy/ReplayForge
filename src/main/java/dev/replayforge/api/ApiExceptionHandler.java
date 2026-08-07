@@ -8,6 +8,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import dev.replayforge.sampleworkload.WorkflowTransitionException;
+import dev.replayforge.replay.ReplayNotFoundException;
+import dev.replayforge.replay.ReplayValidationException;
 
 @RestControllerAdvice
 public final class ApiExceptionHandler {
@@ -21,5 +23,17 @@ public final class ApiExceptionHandler {
     @ResponseStatus(HttpStatus.CONFLICT)
     Map<String, Object> transition(WorkflowTransitionException error) {
         return Map.of("code", "INVALID_WORKFLOW_TRANSITION", "message", error.getMessage(), "timestamp", Instant.now().toString());
+    }
+
+    @ExceptionHandler(ReplayValidationException.class)
+    @ResponseStatus(HttpStatus.UNPROCESSABLE_ENTITY)
+    Map<String, Object> replayValidation(ReplayValidationException error) {
+        return Map.of("code", "INVALID_REPLAY", "message", error.getMessage(), "timestamp", Instant.now().toString());
+    }
+
+    @ExceptionHandler(ReplayNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    Map<String, Object> replayNotFound(ReplayNotFoundException error) {
+        return Map.of("code", "REPLAY_NOT_FOUND", "message", error.getMessage(), "timestamp", Instant.now().toString());
     }
 }

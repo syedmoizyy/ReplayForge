@@ -21,10 +21,7 @@ public class WorkflowEngine {
     private final WorkflowOutbox outbox;
     private final Clock clock;
 
-    public WorkflowEngine(EventStore events, ReservationProjectionRepository projections, WorkflowOutbox outbox) {
-        this(events, projections, outbox, Clock.systemUTC());
-    }
-    WorkflowEngine(EventStore events, ReservationProjectionRepository projections, WorkflowOutbox outbox, Clock clock) {
+    public WorkflowEngine(EventStore events, ReservationProjectionRepository projections, WorkflowOutbox outbox, Clock clock) {
         this.events = events; this.projections = projections; this.outbox = outbox; this.clock = clock;
     }
 

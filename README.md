@@ -34,7 +34,19 @@ GET http://localhost:8080/actuator/health/readiness
 POST http://localhost:8080/api/v1/sample-workflows
 POST http://localhost:8080/api/v1/sample-workflows/{reservationId}/cancel
 GET http://localhost:8080/api/v1/sample-workflows/{reservationId}
+POST http://localhost:8080/api/v1/traces/{correlationId}/replays
+GET http://localhost:8080/api/v1/replays/{replayId}
+GET http://localhost:8080/api/v1/replays/{replayId}/trace
+GET http://localhost:8080/api/v1/replays/{replayId}/state
 ```
+
+Start a full deterministic replay with checkpoint `0`, or set the checkpoint to rebuild baseline state and emit only source events after that sequence:
+
+```json
+{"checkpoint":0,"seed":42,"clockMode":"FIXED_EPOCH"}
+```
+
+Replay execution uses virtual time. Operational run timestamps use the system clock, but replay ordering and replay event timestamps never use sleeps or wall-clock progression.
 
 Configuration defaults support the Compose services. Copy `.env.example` and export its values only when overrides are needed; Spring does not automatically load `.env` files.
 
@@ -43,7 +55,7 @@ The sample workflow uses Redis consumer groups named `reservation`, `payment`, `
 ## Roadmap
 
 1. Complete event capture and the versioned reservation workload.
-2. Add deterministic replay from the beginning or a checkpoint.
+2. Extend deterministic replay with controlled fault schedules.
 3. Add duplicate, delay, drop, reorder, malformed-payload, timeout, and worker-failure faults.
 4. Evaluate versioned safety invariants at every transition.
 5. Report the first divergence and final-state diff through a minimal UI and export.

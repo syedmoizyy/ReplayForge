@@ -110,6 +110,8 @@ Replay creation accepts a checkpoint (or start), integer seed, and ordered fault
 7. Reduce one scheduled item at a time, persist transition state, and evaluate invariants.
 8. Compare normalized original and replay transitions to locate the first semantic divergence.
 
+Replay runs are stored separately from canonical source events. A run owns immutable replay events and decisions keyed by `replay_id`; source event IDs are retained as provenance and mapped to seed-derived replay event IDs. A checkpoint prefix is reduced into baseline state and recorded in the decision log, while only events after the checkpoint are emitted into the replay trace. Operational run timestamps do not participate in deterministic output comparison.
+
 Concurrency is represented as an explicit schedule. Delays change logical delivery position/time and do not sleep. Reports distinguish a fault application point, first state divergence, and first invariant failure because these may be different events.
 
 ## Fault model
