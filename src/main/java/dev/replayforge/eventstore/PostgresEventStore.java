@@ -82,6 +82,20 @@ public class PostgresEventStore implements EventStore {
         return jdbc.query("select * from events where correlation_id = ? order by insertion_order", rowMapper, id);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<TraceSummary> findTraces(int limit) {
+        return jdbc.query("""
+                select correlation_id, min(aggregate_id::text)::uuid aggregate_id, count(*) event_count,
+                  min(recorded_at) first_recorded_at, max(recorded_at) last_recorded_at,
+                  (array_agg(event_type order by insertion_order desc))[1] last_event_type
+                from events group by correlation_id order by max(recorded_at) desc limit ?
+                """, (rs, row) -> new TraceSummary(rs.getObject("correlation_id", UUID.class),
+                rs.getObject("aggregate_id", UUID.class), rs.getLong("event_count"),
+                rs.getTimestamp("first_recorded_at").toInstant(), rs.getTimestamp("last_recorded_at").toInstant(),
+                rs.getString("last_event_type")), limit);
+    }
+
     private Optional<DomainEvent> one(String sql, Object... args) {
         return jdbc.query(sql, rowMapper, args).stream().findFirst();
     }

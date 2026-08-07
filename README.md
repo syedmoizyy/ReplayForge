@@ -41,6 +41,24 @@ GET http://localhost:8080/api/v1/replays/{replayId}/state
 GET http://localhost:8080/api/v1/replays/{replayId}/report
 ```
 
+`/api/v1/workflows` is the canonical alias for the sample-workflow endpoints above; the older route remains available for compatibility.
+
+The finalized REST surface also includes trace/replay lists, scenario validation, violation evidence, and JSON/Markdown report exports. Interactive OpenAPI documentation is served at `http://localhost:8080/docs` and the machine-readable document at `/v3/api-docs`.
+
+## Minimal web dashboard
+
+The Vite client intentionally has four screens only: traces, scenario runner, replay detail, and divergence report. Its bundled fixture is generated demonstration data and is labeled as such; it does not represent a benchmark.
+
+```sh
+cd web
+npm install
+npm run dev
+npm run build
+npm run test:e2e
+```
+
+During development, Vite proxies `/api` to the Spring application on port 8080. The single Playwright test walks the seeded happy path from trace inspection to divergence evidence.
+
 Start a full deterministic replay with checkpoint `0`, or set the checkpoint to rebuild baseline state and emit only source events after that sequence:
 
 ```json

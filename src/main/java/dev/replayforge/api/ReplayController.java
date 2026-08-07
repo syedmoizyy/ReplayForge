@@ -16,6 +16,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.http.MediaType;
+import dev.replayforge.invariants.InvariantViolation;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1")
@@ -36,6 +40,11 @@ public final class ReplayController {
     @GetMapping("/replays/{replayId}")
     public ReplayRun status(@PathVariable UUID replayId) { return service.get(replayId); }
 
+    @GetMapping("/replays")
+    public List<ReplayRun> recent(@RequestParam(defaultValue = "50") @Min(1) int limit) {
+        return service.recent(Math.min(limit, 200));
+    }
+
     @GetMapping("/replays/{replayId}/trace")
     public ReplayService.ReplayTrace trace(@PathVariable UUID replayId) { return service.trace(replayId); }
 
@@ -44,4 +53,15 @@ public final class ReplayController {
 
     @GetMapping("/replays/{replayId}/report")
     public ReplayService.ReplayReport report(@PathVariable UUID replayId) { return service.report(replayId); }
+
+    @GetMapping("/replays/{replayId}/violations")
+    public List<InvariantViolation> violations(@PathVariable UUID replayId) { return service.violations(replayId); }
+
+    @GetMapping(value = "/replays/{replayId}/report.md", produces = "text/markdown")
+    public String reportMarkdown(@PathVariable UUID replayId) { return service.report(replayId).markdown(); }
+
+    @GetMapping(value = "/replays/{replayId}/report.json", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<String> reportJson(@PathVariable UUID replayId) {
+        return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(service.report(replayId).json());
+    }
 }

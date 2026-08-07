@@ -11,6 +11,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import dev.replayforge.invariants.InvariantViolation;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
@@ -65,6 +66,18 @@ public class ReplayRunRepository {
     @Transactional(readOnly = true)
     public Optional<ReplayRun> find(UUID replayId) {
         return jdbc.query("select * from replay_runs where replay_id=?", this::mapRun, replayId).stream().findFirst();
+    }
+
+    public List<ReplayRun> findRecent(int limit) {
+        return jdbc.query("select * from replay_runs order by created_at desc limit ?", this::mapRun, limit);
+    }
+
+    public List<InvariantViolation> violations(UUID replayId) {
+        String value = jdbc.query("select violations::text from replay_runs where replay_id=?", (rs, row) -> rs.getString(1), replayId)
+                .stream().findFirst().orElseThrow(() -> new ReplayNotFoundException(replayId));
+        if (value == null) return List.of();
+        try { return mapper.readValue(value, mapper.getTypeFactory().constructCollectionType(List.class, InvariantViolation.class)); }
+        catch (JsonProcessingException error) { throw new IllegalStateException("Invalid stored violations", error); }
     }
 
     @Transactional(readOnly = true)

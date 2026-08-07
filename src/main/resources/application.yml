@@ -30,3 +30,7 @@ replayforge:
     initial-backoff-ms: ${WORKFLOW_INITIAL_BACKOFF_MS:100}
     poll-delay-ms: ${WORKFLOW_POLL_DELAY_MS:250}
     consumers-enabled: ${WORKFLOW_CONSUMERS_ENABLED:true}
+springdoc:
+  swagger-ui:
+    path: /docs
+    operations-sorter: method

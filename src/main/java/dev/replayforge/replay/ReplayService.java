@@ -5,6 +5,7 @@ import dev.replayforge.eventstore.EventStore;
 import java.time.Clock;
 import java.util.List;
 import java.util.UUID;
+import dev.replayforge.invariants.InvariantViolation;
 import java.util.concurrent.Executor;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
@@ -37,6 +38,9 @@ public class ReplayService {
     public ReplayRun get(UUID replayId) {
         return repository.find(replayId).orElseThrow(() -> new ReplayNotFoundException(replayId));
     }
+
+    public List<ReplayRun> recent(int limit) { return repository.findRecent(limit); }
+    public List<InvariantViolation> violations(UUID replayId) { get(replayId); return repository.violations(replayId); }
 
     public ReplayTrace trace(UUID replayId) {
         get(replayId);

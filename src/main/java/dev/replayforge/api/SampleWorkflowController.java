@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.validation.annotation.Validated;
 
 @RestController
-@RequestMapping("/api/v1/sample-workflows")
+@RequestMapping({"/api/v1/workflows", "/api/v1/sample-workflows"})
 @Validated
 public final class SampleWorkflowController {
     private final WorkflowEngine engine;
