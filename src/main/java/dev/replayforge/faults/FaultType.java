@@ -1,0 +1,5 @@
+package dev.replayforge.faults;
+
+public enum FaultType {
+    DUPLICATE, DROP, DELAY, REORDER, WORKER_CRASH, RETRY_STORM, DEPENDENCY_TIMEOUT, MALFORMED_PAYLOAD
+}

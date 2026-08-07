@@ -1,0 +1,1 @@
+{"schemaVersion":1,"name":"malformed schema version","seed":106,"limits":{"maxDuplicates":3,"maxDelayMillis":30000,"maxRetries":5,"maxEvents":100},"faults":[{"id":"unknown-schema","type":"MALFORMED_PAYLOAD","selector":{"sequenceFrom":2,"sequenceTo":2},"parameters":{"schemaVersion":999,"payloadPatch":{"unexpected":"field"}}}]}

@@ -1,0 +1,1 @@
+{"schemaVersion":1,"name":"delayed ReservationConfirmed","seed":103,"limits":{"maxDuplicates":3,"maxDelayMillis":30000,"maxRetries":5,"maxEvents":100},"faults":[{"id":"delay-confirmation","type":"DELAY","selector":{"eventType":"ReservationConfirmed"},"parameters":{"durationMillis":5000}}]}

@@ -1,0 +1,1 @@
+{"schemaVersion":1,"name":"RefundCompleted before EventCancelled","seed":102,"limits":{"maxDuplicates":3,"maxDelayMillis":30000,"maxRetries":5,"maxEvents":100},"faults":[{"id":"refund-first","type":"REORDER","selector":{"eventType":"RefundCompleted"},"parameters":{"position":"FIRST"}}]}

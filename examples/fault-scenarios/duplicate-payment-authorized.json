@@ -1,0 +1,1 @@
+{"schemaVersion":1,"name":"duplicate PaymentAuthorized","seed":101,"limits":{"maxDuplicates":3,"maxDelayMillis":30000,"maxRetries":5,"maxEvents":100},"faults":[{"id":"duplicate-payment","type":"DUPLICATE","selector":{"eventType":"PaymentAuthorized"},"parameters":{"count":1}}]}

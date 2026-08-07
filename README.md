@@ -48,6 +48,12 @@ Start a full deterministic replay with checkpoint `0`, or set the checkpoint to 
 
 Replay execution uses virtual time. Operational run timestamps use the system clock, but replay ordering and replay event timestamps never use sleeps or wall-clock progression.
 
+## Fault scenarios
+
+Versioned JSON examples live in `examples/fault-scenarios`. A scenario declares a deterministic seed, ordered faults, selectors (event type, aggregate ID, sequence range, attempt range, and seeded probability), and mandatory execution limits. Compilation produces an immutable logical schedule plus an audit decision for every applied or skipped selector evaluation. Worker crashes and dependency timeouts are explicit directives for isolated replay adapters; they never invoke production side effects.
+
+Supported fault types are `DUPLICATE`, `DROP`, `DELAY`, `REORDER`, `WORKER_CRASH`, `RETRY_STORM`, `DEPENDENCY_TIMEOUT`, and `MALFORMED_PAYLOAD`. Delays advance logical delivery time rather than sleeping. Limits bound duplicates per match, delay duration, retries per match, source events, and the final compiled schedule size.
+
 Configuration defaults support the Compose services. Copy `.env.example` and export its values only when overrides are needed; Spring does not automatically load `.env` files.
 
 The sample workflow uses Redis consumer groups named `reservation`, `payment`, `refund`, and `payout`. Failed deliveries are retried up to the configured bound and then written to `replayforge:workflow:dlq`. PostgreSQL remains canonical: the event stream, consumer receipts, projection, and transactional outbox survive consumer restarts.
