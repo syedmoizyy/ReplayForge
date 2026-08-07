@@ -49,6 +49,12 @@ public class ReplayService {
         return run.finalState();
     }
 
+    public ReplayReport report(UUID replayId) {
+        ReplayRun run = get(replayId);
+        if (run.status() != ReplayRun.Status.COMPLETED) throw new ReplayValidationException("Replay is not complete: " + replayId);
+        return repository.report(replayId);
+    }
+
     private void execute(ReplayRun run, List<DomainEvent> source) {
         repository.markRunning(run.replayId(), systemClock.instant());
         try {
@@ -61,4 +67,5 @@ public class ReplayService {
     }
 
     public record ReplayTrace(List<ReplayedEvent> events, List<ReplayDecision> decisions) {}
+    public record ReplayReport(String json, String markdown) {}
 }

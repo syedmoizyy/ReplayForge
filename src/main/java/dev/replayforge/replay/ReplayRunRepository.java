@@ -50,8 +50,11 @@ public class ReplayRunRepository {
                 """, replayId, decision.order(), decision.sourceEventId(), decision.replayEventId(), decision.type().name(),
                     Timestamp.from(decision.logicalTime()), json(decision.detail()));
         }
-        jdbc.update("update replay_runs set status='COMPLETED',completed_at=?,output_summary=?::jsonb,final_state=?::jsonb where replay_id=?",
-                Timestamp.from(completedAt), json(execution.summary()), json(execution.finalState()), replayId);
+        jdbc.update("""
+                update replay_runs set status='COMPLETED',completed_at=?,output_summary=?::jsonb,final_state=?::jsonb,
+                violations=?::jsonb,divergence_report=?::jsonb,divergence_report_markdown=? where replay_id=?
+                """, Timestamp.from(completedAt), json(execution.summary()), json(execution.finalState()),
+                json(execution.violations()), execution.divergenceReportJson(), execution.divergenceReportMarkdown(), replayId);
     }
 
     public void fail(UUID replayId, Instant completedAt, String message) {
@@ -76,6 +79,12 @@ public class ReplayRunRepository {
                 new ReplayDecision(rs.getLong("decision_order"), rs.getObject("source_event_id", UUID.class),
                         rs.getObject("replay_event_id", UUID.class), ReplayDecision.Type.valueOf(rs.getString("decision_type")),
                         rs.getTimestamp("logical_time").toInstant(), readMap(rs.getString("detail"))), replayId);
+    }
+
+    public ReplayService.ReplayReport report(UUID replayId) {
+        return jdbc.query("select divergence_report::text,divergence_report_markdown from replay_runs where replay_id=?",
+                (rs, row) -> new ReplayService.ReplayReport(rs.getString(1), rs.getString(2)), replayId).stream()
+                .findFirst().orElseThrow(() -> new ReplayNotFoundException(replayId));
     }
 
     private ReplayRun mapRun(ResultSet rs, int row) throws SQLException {

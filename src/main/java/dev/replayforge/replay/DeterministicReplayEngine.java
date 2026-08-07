@@ -1,6 +1,11 @@
 package dev.replayforge.replay;
 
 import dev.replayforge.domain.event.DomainEvent;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import dev.replayforge.divergence.*;
+import dev.replayforge.invariants.*;
+import dev.replayforge.observability.ReplayTelemetry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -13,12 +18,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
-import org.springframework.stereotype.Component;
 
-@Component
 public final class DeterministicReplayEngine {
     private static final Instant FIXED_EPOCH = Instant.parse("2000-01-01T00:00:00Z");
     private final ReservationReplayReducer reducer = new ReservationReplayReducer();
+    private final InvariantEngine invariants;
+    private final DivergenceReporter reporter;
+    private final ReplayTelemetry telemetry;
+
+    public DeterministicReplayEngine() {
+        this(InvariantEngine.standard(), new DivergenceReporter(new ObjectMapper()), new ReplayTelemetry(new SimpleMeterRegistry()));
+    }
+
+    public DeterministicReplayEngine(InvariantEngine invariants, DivergenceReporter reporter, ReplayTelemetry telemetry) {
+        this.invariants = invariants; this.reporter = reporter; this.telemetry = telemetry;
+    }
 
     public ReplayExecution execute(List<DomainEvent> source, long checkpoint, long seed, ReplayRun.ClockMode clockMode) {
         if (source.isEmpty()) throw new ReplayValidationException("Source trace is empty");
@@ -27,6 +41,7 @@ public final class DeterministicReplayEngine {
         if (checkpoint > maximumSequence) throw new ReplayValidationException(
                 "checkpoint " + checkpoint + " exceeds source maximum sequence " + maximumSequence);
 
+        try (ReplayTelemetry.Run run = telemetry.start(source.getFirst().correlationId(), seed, source.size())) {
         SeededDeterministicScheduler scheduler = new SeededDeterministicScheduler(seed);
         Instant initial = clockMode == ReplayRun.ClockMode.SOURCE_RELATIVE ? source.getFirst().occurredAt() : FIXED_EPOCH;
         VirtualClock clock = new VirtualClock(initial);
@@ -36,6 +51,11 @@ public final class DeterministicReplayEngine {
         List<ReplayedEvent> output = new ArrayList<>();
         List<ReplayDecision> decisions = new ArrayList<>();
         ReplayState state = ReplayState.empty();
+        ReplayState baselineState = ReplayState.empty();
+        List<DomainEvent> seen = new ArrayList<>();
+        List<InvariantViolation> violations = new ArrayList<>();
+        List<TraceTransition> baselineTransitions = new ArrayList<>();
+        List<TraceTransition> replayTransitions = new ArrayList<>();
         int baselineCount = 0;
 
         for (int index = 0; index < source.size(); index++) {
@@ -44,7 +64,17 @@ public final class DeterministicReplayEngine {
             UUID replayEventId = scheduler.nextId();
             eventIds.put(original.eventId(), replayEventId);
             UUID replayAggregateId = aggregateIds.computeIfAbsent(original.aggregateId(), ignored -> scheduler.nextId());
+            ReplayState before = state;
             state = reducer.apply(state, original);
+            baselineState = reducer.apply(baselineState, original);
+            seen.add(original);
+            telemetry.eventProcessed();
+            List<InvariantViolation> stepViolations = invariants.evaluate(new InvariantContext(
+                    original, before, state, seen, index + 1L, false));
+            violations.addAll(stepViolations); telemetry.violations(stepViolations);
+            List<String> effects = financialEffects(original);
+            baselineTransitions.add(new TraceTransition(index + 1L, original.eventId(), original.eventType(), original.payload(), effects, baselineState));
+            replayTransitions.add(new TraceTransition(index + 1L, original.eventId(), original.eventType(), original.payload(), effects, state));
             boolean baseline = original.sequenceNumber() <= checkpoint;
             Map<String, String> detail = new TreeMap<>();
             detail.put("sourceSequenceNumber", Long.toString(original.sequenceNumber()));
@@ -68,9 +98,26 @@ public final class DeterministicReplayEngine {
                     ReplayDecision.Type.EVENT_REPLAYED, logicalTime, detail));
         }
 
+        DomainEvent last = source.getLast();
+        List<InvariantViolation> completionViolations = invariants.evaluate(new InvariantContext(
+                last, state, state, seen, source.size(), true));
+        violations.addAll(completionViolations); telemetry.violations(completionViolations);
+        DivergenceReport report = reporter.compare(baselineTransitions, replayTransitions, baselineState, state, violations);
+
         ReplayOutputSummary summary = new ReplayOutputSummary(source.size(), baselineCount, output.size(),
                 decisions.size(), digest(state));
-        return new ReplayExecution(output, decisions, state, summary);
+        run.span().setAttribute("replay.violation_count", violations.size());
+        return new ReplayExecution(output, decisions, state, summary, violations, replayTransitions, report,
+                reporter.json(report), reporter.markdown(report));
+        }
+    }
+
+    private List<String> financialEffects(DomainEvent event) {
+        return switch (event.eventType()) {
+            case "PayoutSent" -> List.of("creator-payout");
+            case "RefundCompleted" -> List.of("customer-refund");
+            default -> List.of();
+        };
     }
 
     private String digest(ReplayState state) {

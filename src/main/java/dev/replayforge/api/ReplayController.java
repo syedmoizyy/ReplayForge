@@ -41,4 +41,7 @@ public final class ReplayController {
 
     @GetMapping("/replays/{replayId}/state")
     public ReplayState state(@PathVariable UUID replayId) { return service.state(replayId); }
+
+    @GetMapping("/replays/{replayId}/report")
+    public ReplayService.ReplayReport report(@PathVariable UUID replayId) { return service.report(replayId); }
 }

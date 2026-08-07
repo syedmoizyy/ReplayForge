@@ -38,6 +38,7 @@ POST http://localhost:8080/api/v1/traces/{correlationId}/replays
 GET http://localhost:8080/api/v1/replays/{replayId}
 GET http://localhost:8080/api/v1/replays/{replayId}/trace
 GET http://localhost:8080/api/v1/replays/{replayId}/state
+GET http://localhost:8080/api/v1/replays/{replayId}/report
 ```
 
 Start a full deterministic replay with checkpoint `0`, or set the checkpoint to rebuild baseline state and emit only source events after that sequence:
@@ -47,6 +48,10 @@ Start a full deterministic replay with checkpoint `0`, or set the checkpoint to 
 ```
 
 Replay execution uses virtual time. Operational run timestamps use the system clock, but replay ordering and replay event timestamps never use sleeps or wall-clock progression.
+
+Each replay evaluates the versioned invariant registry after every transition and once at completion. Hard failures and warnings retain related event IDs, the state snapshot, expected and actual conditions, severity, and event position. The standard registry checks payout-after-refund, at-most-once financial effects, workflow transitions, terminal refunds after cancellation, and monotonic sequence ordering.
+
+The report endpoint returns stable machine-readable JSON and concise Markdown comparing baseline and replay event order, event type, payload fields, financial side effects, and final aggregate state. Replay runs emit an OpenTelemetry `replay.execute` span with correlation and seed attributes, plus Micrometer metrics for processed events, injected faults, violations, duration, and throughput under the `replayforge.replay.*` prefix.
 
 ## Fault scenarios
 
