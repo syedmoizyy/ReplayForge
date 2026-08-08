@@ -59,6 +59,8 @@ npm run test:e2e
 
 During development, Vite proxies `/api` to the Spring application on port 8080. The single Playwright test walks the seeded happy path from trace inspection to divergence evidence.
 
+The fixture UI exposes its error/retry state at `/?state=error`; filtering the seeded trace to a non-match demonstrates the empty state. Displayed duration and throughput values are generated fixture data, not benchmark measurements.
+
 Start a full deterministic replay with checkpoint `0`, or set the checkpoint to rebuild baseline state and emit only source events after that sequence:
 
 ```json

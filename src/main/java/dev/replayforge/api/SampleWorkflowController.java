@@ -18,10 +18,15 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.validation.annotation.Validated;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @RequestMapping({"/api/v1/workflows", "/api/v1/sample-workflows"})
 @Validated
+@Tag(name = "Workflows", description = "Seeded neutral reservation workflows used to capture demonstration traces")
 public final class SampleWorkflowController {
     private final WorkflowEngine engine;
     public SampleWorkflowController(WorkflowEngine engine) { this.engine = engine; }
@@ -31,6 +36,9 @@ public final class SampleWorkflowController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.ACCEPTED)
+    @Operation(summary = "Start a seeded sample workflow")
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(examples = @ExampleObject(
+            value = "{\"depositAmount\":12500,\"currency\":\"USD\",\"autoPayout\":true}")))
     public DomainEvent start(@Valid @RequestBody StartRequest request,
             @RequestHeader("Idempotency-Key") @NotBlank String idempotencyKey) {
         return engine.start(request.depositAmount(), request.currency(), request.autoPayout(), idempotencyKey);
@@ -38,11 +46,13 @@ public final class SampleWorkflowController {
 
     @PostMapping("/{reservationId}/cancel")
     @ResponseStatus(HttpStatus.ACCEPTED)
+    @Operation(summary = "Cancel a sample workflow and request its refund")
     public DomainEvent cancel(@PathVariable UUID reservationId,
             @RequestHeader("Idempotency-Key") @NotBlank String idempotencyKey) {
         return engine.cancel(reservationId, idempotencyKey);
     }
 
     @GetMapping("/{reservationId}")
+    @Operation(summary = "Read sample workflow projection state")
     public ReservationProjection state(@PathVariable UUID reservationId) { return engine.state(reservationId); }
 }

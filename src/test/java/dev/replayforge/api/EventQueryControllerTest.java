@@ -31,7 +31,7 @@ class EventQueryControllerTest {
         mvc.perform(get("/api/v1/aggregates/{id}/events", id)).andExpect(status().isOk());
         verify(store).findByAggregateId(id);
     }
-}
+
     @Test void listsTraceSummariesUsingStableContract() throws Exception {
         UUID correlation = UUID.randomUUID(); UUID aggregate = UUID.randomUUID();
         when(store.findTraces(25)).thenReturn(List.of(new EventStore.TraceSummary(correlation, aggregate, 5,
@@ -41,3 +41,4 @@ class EventQueryControllerTest {
                 .andExpect(jsonPath("$[0].eventCount").value(5))
                 .andExpect(jsonPath("$[0].lastEventType").value("PayoutSent"));
     }
+}

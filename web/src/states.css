@@ -1,0 +1,8 @@
+.progress { display: grid; gap: 5px; }
+.progress span, .state { color: var(--muted); }
+.progress progress { width: 100%; margin-top: 6px; accent-color: var(--cyan); }
+.state { padding: 24px; text-align: center; border: 1px dashed var(--line); }
+.state.error { color: #ffc1c4; }
+.state button { margin-left: 10px; }
+.correlation { display: flex; gap: 12px; align-items: center; color: var(--muted); }
+.correlation code { user-select: all; }
