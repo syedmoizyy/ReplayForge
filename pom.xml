@@ -41,4 +41,22 @@
       <plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-failsafe-plugin</artifactId><version>3.3.1</version><executions><execution><goals><goal>integration-test</goal><goal>verify</goal></goals></execution></executions></plugin>
     </plugins>
   </build>
+  <profiles>
+    <profile>
+      <id>quality</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>com.github.spotbugs</groupId><artifactId>spotbugs-maven-plugin</artifactId><version>4.8.6.6</version>
+            <executions><execution><goals><goal>check</goal></goals></execution></executions>
+          </plugin>
+          <plugin>
+            <groupId>org.owasp</groupId><artifactId>dependency-check-maven</artifactId><version>11.1.0</version>
+            <configuration><failBuildOnCVSS>7</failBuildOnCVSS><formats><format>HTML</format><format>JSON</format></formats></configuration>
+            <executions><execution><goals><goal>check</goal></goals></execution></executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 </project>

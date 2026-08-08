@@ -1,4 +1,4 @@
-.PHONY: setup run test integration-test seed-local clean-local
+.PHONY: setup run test benchmark quality integration-test seed-local clean-local
 
 setup:
 	docker compose up -d --wait
@@ -8,6 +8,12 @@ run:
 
 test:
 	mvn test
+
+benchmark:
+	pwsh -File scripts/benchmark-replay.ps1
+
+quality:
+	mvn -Pquality verify
 
 integration-test:
 	mvn verify

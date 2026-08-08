@@ -22,12 +22,14 @@ public class ReplayExecutionConfiguration {
             DivergenceReporter reporter, ReplayTelemetry telemetry) {
         return new DeterministicReplayEngine(invariants, reporter, telemetry);
     }
-    @Bean(name = "replayExecutor") public Executor replayExecutor() {
+    @Bean(name = "replayExecutor") public Executor replayExecutor(ReplayExecutionProperties properties) {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        executor.setCorePoolSize(1);
-        executor.setMaxPoolSize(4);
-        executor.setQueueCapacity(100);
+        executor.setCorePoolSize(properties.coreThreads());
+        executor.setMaxPoolSize(properties.maxThreads());
+        executor.setQueueCapacity(properties.queueCapacity());
         executor.setThreadNamePrefix("replay-");
+        executor.setWaitForTasksToCompleteOnShutdown(true);
+        executor.setAwaitTerminationSeconds(30);
         executor.initialize();
         return executor;
     }

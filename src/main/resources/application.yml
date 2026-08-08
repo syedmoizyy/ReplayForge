@@ -23,6 +23,12 @@ management:
       show-details: when_authorized
 replayforge:
   instance-id: ${REPLAYFORGE_INSTANCE_ID:local}
+  replay-execution:
+    core-threads: ${REPLAY_CORE_THREADS:1}
+    max-threads: ${REPLAY_MAX_THREADS:4}
+    queue-capacity: ${REPLAY_QUEUE_CAPACITY:32}
+    max-source-events: ${REPLAY_MAX_SOURCE_EVENTS:10000}
+    retry-after-seconds: ${REPLAY_RETRY_AFTER_SECONDS:5}
   workflow-broker:
     stream: ${WORKFLOW_STREAM:replayforge:workflow}
     dead-letter-stream: ${WORKFLOW_DLQ_STREAM:replayforge:workflow:dlq}

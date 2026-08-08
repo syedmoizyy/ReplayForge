@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import dev.replayforge.replay.ReplayRun;
 import dev.replayforge.replay.ReplayService;
+import dev.replayforge.replay.ReplayCapacityException;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -51,6 +52,19 @@ class ReplayControllerContractTest {
         mvc.perform(get("/api/v1/replays/{id}", run.replayId()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.seed").value(101));
+    }
+
+    @Test void capacityExhaustionHasRetryableContract() throws Exception {
+        UUID correlationId = UUID.randomUUID();
+        when(service.start(correlationId, 0, 101, ReplayRun.ClockMode.FIXED_EPOCH))
+                .thenThrow(new ReplayCapacityException(7));
+
+        mvc.perform(post("/api/v1/traces/{id}/replays", correlationId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"checkpoint\":0,\"seed\":101,\"clockMode\":\"FIXED_EPOCH\"}"))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(header().string("Retry-After", "7"))
+                .andExpect(jsonPath("$.code").value("REPLAY_CAPACITY_EXHAUSTED"));
     }
 
     private static ReplayRun run(UUID correlationId, ReplayRun.Status status) {

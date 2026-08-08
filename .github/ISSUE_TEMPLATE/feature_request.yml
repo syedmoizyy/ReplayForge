@@ -1,0 +1,16 @@
+name: Feature request
+description: Propose a scoped replay capability
+title: "[Feature]: "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: failure
+    attributes: {label: Failure investigation need, description: Which event-driven failure becomes easier to reproduce?}
+    validations: {required: true}
+  - type: textarea
+    id: journey
+    attributes: {label: User journey, description: How does this fit trace inspection, scenario replay, or divergence evidence?}
+    validations: {required: true}
+  - type: textarea
+    id: determinism
+    attributes: {label: Determinism and safety, description: Identify ordering, isolation, side-effect, or compatibility implications.}

@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import dev.replayforge.sampleworkload.WorkflowTransitionException;
 import dev.replayforge.replay.ReplayNotFoundException;
 import dev.replayforge.replay.ReplayValidationException;
+import dev.replayforge.replay.ReplayCapacityException;
+import org.springframework.http.ResponseEntity;
 
 @RestControllerAdvice
 public final class ApiExceptionHandler {
@@ -35,5 +37,13 @@ public final class ApiExceptionHandler {
     @ResponseStatus(HttpStatus.NOT_FOUND)
     Map<String, Object> replayNotFound(ReplayNotFoundException error) {
         return Map.of("code", "REPLAY_NOT_FOUND", "message", error.getMessage(), "timestamp", Instant.now().toString());
+    }
+
+    @ExceptionHandler(ReplayCapacityException.class)
+    ResponseEntity<Map<String, Object>> replayCapacity(ReplayCapacityException error) {
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .header("Retry-After", Integer.toString(error.retryAfterSeconds()))
+                .body(Map.of("code", "REPLAY_CAPACITY_EXHAUSTED", "message", error.getMessage(),
+                        "timestamp", Instant.now().toString()));
     }
 }

@@ -18,6 +18,7 @@ docker compose up -d --wait
 mvn spring-boot:run
 mvn test
 mvn verify
+mvn -Pquality verify
 ```
 
 With the application running, seed one normal payout workflow and one cancellation/refund workflow:
@@ -61,6 +62,10 @@ During development, Vite proxies `/api` to the Spring application on port 8080. 
 
 The fixture UI exposes its error/retry state at `/?state=error`; filtering the seeded trace to a non-match demonstrates the empty state. Displayed duration and throughput values are generated fixture data, not benchmark measurements.
 
+Replay execution is bounded by configurable worker, queue, and source-event limits. Capacity exhaustion returns HTTP `429` with a `Retry-After` header instead of growing resource use without bound. See `docs/HARDENING_AUDIT.md` for the audit and accepted MVP risks.
+
+Local replay benchmarks and concurrent admission checks are documented in `docs/BENCHMARKING.md`. Reports are generated beneath `target/` and contain only measurements produced by that run.
+
 Start a full deterministic replay with checkpoint `0`, or set the checkpoint to rebuild baseline state and emit only source events after that sequence:
 
 ```json
@@ -82,6 +87,10 @@ Supported fault types are `DUPLICATE`, `DROP`, `DELAY`, `REORDER`, `WORKER_CRASH
 Configuration defaults support the Compose services. Copy `.env.example` and export its values only when overrides are needed; Spring does not automatically load `.env` files.
 
 The sample workflow uses Redis consumer groups named `reservation`, `payment`, `refund`, and `payout`. Failed deliveries are retried up to the configured bound and then written to `replayforge:workflow:dlq`. PostgreSQL remains canonical: the event stream, consumer receipts, projection, and transactional outbox survive consumer restarts.
+
+## Project policies
+
+See `CONTRIBUTING.md`, `SECURITY.md`, `CODE_OF_CONDUCT.md`, `LICENSE`, and the concise `ROADMAP.md`.
 
 ## Roadmap
 

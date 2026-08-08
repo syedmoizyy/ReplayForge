@@ -1,0 +1,24 @@
+name: Bug report
+description: Report reproducible ReplayForge behavior
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What happened, and what did you expect?
+    validations: {required: true}
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: Use generated/redacted traces only. Never post secrets or private trace data.
+    validations: {required: true}
+  - type: input
+    id: environment
+    attributes: {label: Environment, description: OS, Java, Maven, database, Redis, and commit}
+    validations: {required: true}
+  - type: textarea
+    id: logs
+    attributes: {label: Redacted logs}

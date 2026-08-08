@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
+import java.util.concurrent.Executors;
 
 class DeterministicReplayEngineTest {
     private static final UUID AGGREGATE = UUID.fromString("00000000-0000-0000-0000-000000000010");
@@ -48,6 +49,22 @@ class DeterministicReplayEngineTest {
                 Instant.parse("2000-01-01T00:00:00Z"), Instant.parse("2000-01-01T00:00:00.001Z"),
                 Instant.parse("2000-01-01T00:00:00.002Z"), Instant.parse("2000-01-01T00:00:00.003Z"),
                 Instant.parse("2000-01-01T00:00:00.004Z"));
+    }
+
+    @Test void sharedEngineIsSafeAcrossConcurrentReplayRuns() throws Exception {
+        List<DomainEvent> source = sourceTrace();
+        ReplayExecution expected = engine.execute(source, 0, 77L, ReplayRun.ClockMode.FIXED_EPOCH);
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            var tasks = java.util.stream.IntStream.range(0, 32)
+                    .mapToObj(ignored -> executor.submit(() -> engine.execute(source, 0, 77L, ReplayRun.ClockMode.FIXED_EPOCH)))
+                    .toList();
+            for (var task : tasks) {
+                ReplayExecution actual = task.get();
+                assertThat(actual.events()).isEqualTo(expected.events());
+                assertThat(actual.summary()).isEqualTo(expected.summary());
+                assertThat(actual.divergenceReportJson()).isEqualTo(expected.divergenceReportJson());
+            }
+        }
     }
 
     private List<DomainEvent> sourceTrace() {
